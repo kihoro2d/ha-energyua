@@ -21,3 +21,4 @@ config/*
 
 # Blueprint
 custom_components/blueprint
+custom_components/energyua/dev.py
