@@ -105,17 +105,16 @@ class EnergyUAApiClient:
         html = await self._fetch_html(f"https://{self.region}/cherga/{self.group}")
         soup = BeautifulSoup(html, "html.parser")
 
-        periods_items = soup.find_all("div", class_="periods_items")[:2]
-
         self.periods = []
 
-        for i, div in enumerate(periods_items):
+        sections = soup.find_all("div", class_="scale_info")[:2]
+        for i, section in enumerate(sections):
             day_date = datetime.now(UKRAINE_TZ).date() + timedelta(days=i)
 
-            times_count = 2
-            for span in div.find_all("span"):
+            for span in section.select("div.periods_items span"):
                 times = [b.get_text(strip=True) for b in span.find_all("b")[:2]]
-                if len(times) == times_count:
+
+                if len(times) == 2:  # noqa: PLR2004
                     start_str, end_str = times
 
                     start_time = time.fromisoformat(start_str)
