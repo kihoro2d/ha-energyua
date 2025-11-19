@@ -87,7 +87,7 @@ class EnergyUAApiClient:
         for link in soup.select(".select_group_list a"):
             href = link.get("href")
             name = link.text.strip()
-            if isinstance(href, str) and "cherga" in href:
+            if isinstance(href, str):
                 group = href.split("/")[-1]
                 if group and group not in self.groups:
                     self.groups[group] = name
