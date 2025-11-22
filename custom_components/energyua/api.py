@@ -128,6 +128,8 @@ class EnergyUAApiClient:
 
                     self.periods.append({"start": start_dt, "end": end_dt})
 
+        self.periods = self._merge_periods(self.periods)
+
         LOGGER.debug("Fetch periods data %s", self.periods)
 
     async def _fetch_html(self, url: str) -> str:
@@ -231,3 +233,21 @@ class EnergyUAApiClient:
         """Get data from the API."""
         await self.fetch_periods()
         return {}
+
+    @staticmethod
+    def _merge_periods(periods: list[PeriodDict]) -> list[PeriodDict]:
+        if not periods:
+            return []
+
+        periods.sort(key=lambda x: x["start"])
+        merged = [periods[0]]
+
+        for current in periods[1:]:
+            last = merged[-1]
+
+            if current["start"] <= last["end"]:
+                last["end"] = max(last["end"], current["end"])
+            else:
+                merged.append(current)
+
+        return merged
