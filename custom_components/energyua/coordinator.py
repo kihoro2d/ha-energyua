@@ -19,7 +19,7 @@ from .const import (
 )
 
 if TYPE_CHECKING:
-    from datetime import date, datetime
+    from datetime import datetime
 
     from .data import EnergyUAConfigEntry
 
@@ -70,14 +70,14 @@ class EnergyUACoordinator(DataUpdateCoordinator):
         return STATE_OUTAGE if period else STATE_NORMAL
 
     @property
-    def next_outage(self) -> date | datetime | None:
+    def next_outage(self) -> datetime | None:
         """Get the next outage time."""
         dt = self._get_next_power_change_dt(restore=False)
         LOGGER.debug("Next outage: %s", dt)
         return dt
 
     @property
-    def next_restore(self) -> date | datetime | None:
+    def next_restore(self) -> datetime | None:
         """Get the next restore time."""
         dt = self._get_next_power_change_dt(restore=True)
         LOGGER.debug("Next restore: %s", dt)
