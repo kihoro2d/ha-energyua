@@ -8,5 +8,5 @@
   "documentation": "https://github.com/kihoro2d/ha-energyua",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/kihoro2d/ha-energyua/issues",
-  "version": "0.2.0"
+  "version": "1.0.0"
 }
