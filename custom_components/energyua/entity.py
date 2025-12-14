@@ -18,7 +18,6 @@ class EnergyUAEntity(CoordinatorEntity[EnergyUACoordinator]):
     def __init__(self, coordinator: EnergyUACoordinator) -> None:
         """Initialize."""
         super().__init__(coordinator)
-        self._attr_unique_id = coordinator.config_entry.entry_id
         self._attr_device_info = DeviceInfo(
             entry_type=DeviceEntryType.SERVICE,
             translation_key="energyua",
