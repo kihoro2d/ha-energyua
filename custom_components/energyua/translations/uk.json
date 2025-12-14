@@ -32,8 +32,8 @@
   },
   "entity": {
     "calendar": {
-      "calendar": {
-        "name": "Графік відключень"
+      "outages": {
+        "name": "Відключення"
       }
     },
     "sensor": {

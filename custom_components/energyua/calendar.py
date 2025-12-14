@@ -25,9 +25,7 @@ if TYPE_CHECKING:
 
 ENTITY_DESCRIPTIONS = (
     CalendarEntityDescription(
-        key="calendar",
-        name="Calendar",
-        translation_key="calendar",
+        key="outages", translation_key="outages", icon="mdi:calendar-alert"
     ),
 )
 
