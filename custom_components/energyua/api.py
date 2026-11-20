@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import socket
 from datetime import datetime, time, timedelta
 from typing import Any, TypedDict
@@ -61,7 +62,7 @@ class EnergyUAApiClient:
 
         self.regions = {"energy-ua.info": "Полтавська"}
 
-        for link in soup.select("ul.footer_regions_list a"):
+        for link in soup.select("nav.region-links a"):
             href = link.get("href")
             name = link.text.strip()
             if isinstance(href, str) and "energy-ua.info" in href:
@@ -84,7 +85,7 @@ class EnergyUAApiClient:
 
         self.groups = {}
 
-        for link in soup.select(".select_group_list a"):
+        for link in soup.select(".home-queue-grid a"):
             href = link.get("href")
             name = link.text.strip()
             if isinstance(href, str):
@@ -105,30 +106,13 @@ class EnergyUAApiClient:
         html = await self._fetch_html(f"https://{self.region}/cherga/{self.group}")
         soup = BeautifulSoup(html, "html.parser")
 
-        self.periods = []
+        payload = soup.find("script", id="schedulePayload")
 
-        sections = soup.find_all("div", class_="scale_info")[:2]
-        for i, section in enumerate(sections):
-            day_date = datetime.now(UKRAINE_TZ).date() + timedelta(days=i)
+        if not payload or not payload.string:
+            LOGGER.warning("Schedule payload not found")
+            return
 
-            for span in section.select("div.periods_items span"):
-                times = [b.get_text(strip=True) for b in span.find_all("b")[:2]]
-
-                if len(times) == 2:  # noqa: PLR2004
-                    start_str, end_str = times
-
-                    start_time = time.fromisoformat(start_str)
-                    end_time = time.fromisoformat(end_str)
-
-                    start_dt = datetime.combine(day_date, start_time, tzinfo=UKRAINE_TZ)
-                    end_dt = datetime.combine(day_date, end_time, tzinfo=UKRAINE_TZ)
-
-                    if end_dt <= start_dt:
-                        end_dt += timedelta(days=1)
-
-                    self.periods.append({"start": start_dt, "end": end_dt})
-
-        self.periods = self._merge_periods(self.periods)
+        self.periods = self._merge_periods(self._parse_schedule_payload(payload.string))
 
         LOGGER.debug("Fetch periods data %s", self.periods)
 
@@ -233,6 +217,28 @@ class EnergyUAApiClient:
         """Get data from the API."""
         await self.fetch_periods()
         return {}
+
+    @staticmethod
+    def _parse_schedule_payload(raw: str) -> list[PeriodDict]:
+        """Parse schedulePayload JSON (minutes from local midnight)."""
+        data = json.loads(raw)
+        periods: list[PeriodDict] = []
+
+        for i, key in enumerate(("today", "tomorrow")):
+            day_date = datetime.now(UKRAINE_TZ).date() + timedelta(days=i)
+            midnight = datetime.combine(day_date, time.min, tzinfo=UKRAINE_TZ)
+
+            for item in data.get(key) or []:
+                if item.get("status") != "red":
+                    continue
+
+                start_dt = midnight + timedelta(minutes=int(item["from"]))
+                end_dt = midnight + timedelta(minutes=int(item["to"]))
+
+                if end_dt > start_dt:
+                    periods.append({"start": start_dt, "end": end_dt})
+
+        return periods
 
     @staticmethod
     def _merge_periods(periods: list[PeriodDict]) -> list[PeriodDict]:
